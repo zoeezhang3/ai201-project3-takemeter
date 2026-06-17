@@ -151,3 +151,62 @@ For real deployment, I would want stronger performance than in the class project
 The higher precision requirement matters because false accusations of toxicity can harm trust in the tool. The model should be conservative when labeling something toxic. It is better for borderline cases to be sent to human review than for the model to automatically punish users.
 
 Overall, success means the classifier can support better community moderation and analysis without replacing human judgment.
+
+## 7. AI Tool Plan
+
+This project is not mainly an implementation project, so I do not plan to use AI tools primarily for generating code. Instead, I will use AI tools in three parts of the workflow where they can help improve the quality of the dataset, annotation process, and evaluation write-up.
+
+### 7.1 Label Stress-Testing
+
+Before annotating the full dataset, I will use an AI tool to stress-test my label definitions. I will give the tool my three labels, definitions, and hard edge case rules, then ask it to generate 5–10 example r/NYKnicks-style comments that sit near the boundary between two labels.
+
+The goal is not to add these generated examples to the dataset. The goal is to test whether my labels are clear enough for difficult cases. If the AI produces examples that I cannot classify cleanly, that means my label definitions are still too vague. I will revise the label definitions before annotating the real 200-example dataset.
+
+The most important boundary cases I will test are:
+
+- `constructive_analysis` vs. `casual_reaction`: comments that contain some basketball reasoning but are mostly emotional, sarcastic, or low-effort.
+- `casual_reaction` vs. `toxic_bad_faith`: comments that are negative, sarcastic, or aggressive but may not contain a direct insult.
+- `constructive_analysis` vs. `toxic_bad_faith`: comments that include real basketball analysis but also insult another user, player, coach, or fanbase.
+
+Based on this stress test, I will use the following clarified rules during annotation:
+
+1. A comment should only be labeled `constructive_analysis` if it contains a meaningful basketball reason, explanation, comparison, or evidence-based claim.
+2. A comment should be labeled `casual_reaction` if it is mostly hype, frustration, sarcasm, joking, or unsupported opinion, as long as it does not directly attack a person or group.
+3. A comment should be labeled `toxic_bad_faith` if it includes direct insults, hostile baiting, harassment, or personal attacks, even if it also contains some basketball analysis.
+4. General criticism of a player, coach, team, or referee is not automatically toxic. It becomes `toxic_bad_faith` only when the wording becomes personally insulting, abusive, or clearly baiting.
+5. If a comment remains ambiguous after applying these rules, I will record it in the annotation notes and make the most consistent decision based on the comment's overall effect on discussion quality.
+
+### 7.2 Annotation Assistance
+
+I may use an LLM as an annotation assistant, but I will not let it be the final annotator. If I use an AI tool, I will use it to pre-label a batch of examples and then manually review every label myself.
+
+The purpose of pre-labeling is to speed up the first pass and help identify difficult examples. However, the final dataset labels will be my responsibility. I will correct any AI labels that do not match my definitions.
+
+If I use AI pre-labeling, I will track it in the dataset with an additional column such as:
+
+| Column | Purpose |
+|---|---|
+| `ai_prelabel` | The label suggested by the AI tool. |
+| `final_label` | The final human-reviewed label used for training and evaluation. |
+| `label_changed` | Whether I changed the AI-suggested label. |
+| `annotation_notes` | Notes for difficult or ambiguous examples. |
+
+This will allow me to disclose AI assistance honestly in the final AI usage section. I will not include AI-generated comments as training, validation, or test data. The dataset will contain real examples collected from r/NYKnicks.
+
+### 7.3 Failure Analysis
+
+After fine-tuning and evaluating the classifier, I will collect the model's wrong predictions from the validation and test sets. I will give these misclassified examples to an AI tool and ask it to identify possible error patterns.
+
+I will look for patterns such as:
+
+- The model confusing sarcastic fan reactions with toxic comments.
+- The model labeling strong but reasonable criticism as `toxic_bad_faith`.
+- The model missing toxic comments when the insult is indirect or uses sports slang.
+- The model confusing short basketball opinions with `constructive_analysis`.
+- The model overpredicting the most common label if the dataset is imbalanced.
+- The model struggling with comments that require Knicks-specific context, such as nicknames, memes, or references to recent games.
+
+I will use the AI's pattern suggestions as a starting point, not as final evidence. I will verify the patterns myself by reviewing the actual misclassified examples and checking whether the same mistake happens repeatedly. In the final evaluation write-up, I will only report failure patterns that I can confirm from the model's outputs.
+
+This use of AI will help organize the error analysis, but the final interpretation will be based on my own review of the evidence.
+
