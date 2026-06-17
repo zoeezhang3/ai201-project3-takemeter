@@ -71,8 +71,46 @@ Update these after annotation is complete.
 
 ## Evaluation
 
-I will evaluate the classifier using accuracy, per-label precision, per-label recall, macro F1 score, and a confusion matrix. Accuracy alone is not enough because the labels may be imbalanced. Macro F1 is important because it gives equal weight to each label, while precision and recall help show whether the model is unfairly over-labeling comments as toxic or missing harmful comments.
+I evaluate the classifier using accuracy, per-label precision, per-label recall, macro F1 score, and a confusion matrix. Accuracy alone is not enough because the labels may be imbalanced. Macro F1 is important because it gives equal weight to each label, while precision and recall help show whether the model is unfairly over-labeling comments as toxic or missing harmful comments.
+
+## Results
+
+The fine-tuned model is `distilbert-base-uncased`, evaluated on the held-out test set of **30 comments**.
+
+| Metric | Value |
+|---|---:|
+| Baseline accuracy | 53.33% |
+| Fine-tuned accuracy | 30.00% |
+| Improvement over baseline | −23.33% |
+
+The fine-tuned model **underperformed** the baseline. Rather than learning to separate the three classes, it collapsed toward predicting `constructive_analysis` for most comments and **never predicted `toxic_bad_faith` at all**. With only 140 training examples across three classes, the model likely lacked enough signal to learn the more nuanced and minority categories.
+
+### Confusion Matrix
+
+![Confusion matrix for the fine-tuned model on the test set](confusion_matrix.png)
+
+Rows are the true labels and columns are the predicted labels:
+
+| True \ Predicted | constructive_analysis | toxic_bad_faith | casual_reaction |
+|---|---:|---:|---:|
+| **constructive_analysis** | 9 | 0 | 2 |
+| **toxic_bad_faith** | 5 | 0 | 4 |
+| **casual_reaction** | 6 | 0 | 4 |
+
+Key observations:
+
+- The model correctly classified most `constructive_analysis` comments (9 of 11).
+- It **failed completely on `toxic_bad_faith`**, predicting that class zero times and misclassifying all toxic comments as either constructive or casual. This is the most concerning failure for a moderation use case, since it misses harmful comments.
+- `casual_reaction` comments were frequently confused with `constructive_analysis` (6 of 10).
+
+### Did it meet the definition of success?
+
+No. The target was around **75% accuracy**, **0.70 macro F1**, and reasonable precision/recall on `toxic_bad_faith`. The fine-tuned model reached only 30% accuracy and had zero recall on `toxic_bad_faith`, so it does not meet the bar for a useful classifier. Likely next steps would be collecting more labeled data (especially for the minority classes), addressing class imbalance (e.g., class weighting or oversampling), and tuning training hyperparameters.
 
 ## Definition of Success
 
 For this class project, I would consider the classifier useful if it reaches around **75% accuracy**, **0.70 macro F1**, and reasonable precision and recall for the `toxic_bad_faith` label. For a real community moderation tool, I would expect stronger performance and would use the model only as a human-review assistant, not as an automatic deletion system.
+
+
+## Video link 
+https://drive.google.com/file/d/1_w-8K2xbqojV9ziHhj8pNINU1UGtexmR/view?usp=sharing
